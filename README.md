@@ -10,7 +10,7 @@ This is a lightweight demo app, so to use it, clone and run locally. Local stora
    git clone https://github.com/yourusername/farmlink-demo.git
    cd farmlink-demo
    ```
-   ```
+
 2. **Frontend Setup:**
    ```bash
    cd frontend
