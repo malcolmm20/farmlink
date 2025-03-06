@@ -1,12 +1,21 @@
-# React + Vite
+# 🌱 Farmlink - Local Farm Marketplace (Demo Version)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**Farmlink** is a web application that connects local farmers and butchers with urban consumers looking for fresh, locally sourced food. This demo version provides a simple, intuitive platform to browse products, place orders, and manage listings.
 
-Currently, two official plugins are available:
+## 📦 Installation & Setup
+This is a lightweight demo app, so to use it, clone and run locally. Local storage is used to persist data. 
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript and enable type-aware lint rules. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/yourusername/farmlink-demo.git
+   cd farmlink-demo
+   ```
+   ```
+2. **Frontend Setup:**
+   ```bash
+   cd frontend
+   npm install
+   npm run dev
+   ```
+3. **Accessing Farmlink**
+   Visit http://localhost:5173 or whatever port is printed to the command line
