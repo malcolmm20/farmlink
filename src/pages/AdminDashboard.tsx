@@ -2,8 +2,8 @@ import React from 'react';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, Product } from '../types';
-import { getProducts } from '../lib/db';
 import ProductCard from '../components/ProductCard';
+import { getApiUrl } from '../utils/api';
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -11,6 +11,8 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<'users' | 'products'>('users');
   const [users, setUsers] = useState<User[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user || user.role !== 'admin') {
@@ -18,40 +20,74 @@ export default function AdminDashboard() {
       return;
     }
 
-    // For demo purposes, we'll use some sample users
-    const sampleUsers: User[] = [
-      {
-        id: '1',
-        name: 'John Farmer',
-        role: 'farmer',
-        createdAt: new Date(),
-      },
-      {
-        id: '2',
-        name: 'Jane Consumer',
-        role: 'consumer',
-        createdAt: new Date(),
-      },
-      {
-        id: '3',
-        name: 'Admin User',
-        role: 'admin',
-        createdAt: new Date(),
-      },
-    ];
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [usersResponse, productsResponse] = await Promise.all([
+          fetch(getApiUrl('/api/users')),
+          fetch(getApiUrl('/api/products'))
+        ]);
 
-    setUsers(sampleUsers);
-    const allProducts = getProducts();
-    setProducts(allProducts);
+        if (!usersResponse.ok || !productsResponse.ok) {
+          throw new Error('Failed to fetch data');
+        }
+
+        const [usersData, productsData] = await Promise.all([
+          usersResponse.json(),
+          productsResponse.json()
+        ]);
+
+        setUsers(usersData);
+        setProducts(productsData);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
   }, [user, navigate]);
 
-  const handleDeleteUser = (userId: string) => {
-    setUsers(users.filter(user => user.id !== userId));
+  const handleDeleteUser = async (userId: string) => {
+    try {
+      const response = await fetch(getApiUrl(`/api/users/${userId}`), {
+        method: 'DELETE'
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete user');
+      }
+
+      setUsers(users.filter(user => user.id !== userId));
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to delete user');
+    }
   };
 
-  const handleDeleteProduct = (productId: string) => {
-    setProducts(products.filter(product => product.id !== productId));
+  const handleDeleteProduct = async (productId: string) => {
+    try {
+      const response = await fetch(getApiUrl(`/api/products/${productId}`), {
+        method: 'DELETE'
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete product');
+      }
+
+      setProducts(products.filter(product => product.id !== productId));
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to delete product');
+    }
   };
+
+  if (loading) {
+    return <div className="text-center py-8">Loading...</div>;
+  }
+
+  if (error) {
+    return <div className="text-center py-8 text-red-600">{error}</div>;
+  }
 
   return (
     <div>

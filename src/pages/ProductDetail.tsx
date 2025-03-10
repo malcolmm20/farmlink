@@ -1,24 +1,37 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Product } from '../types';
-import { getProducts } from '../lib/db';
 import { StarIcon, MapPinIcon, PhoneIcon, EnvelopeIcon, ClockIcon } from '@heroicons/react/24/outline';
+import { getApiUrl } from '../utils/api';
 
 export default function ProductDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [product, setProduct] = useState<Product | null>(null);
   const [quantity, setQuantity] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const products = getProducts();
-    const foundProduct = products.find(p => p.id === id);
-    if (foundProduct) {
-      setProduct(foundProduct);
-    } else {
-      navigate('/products');
+    const fetchProduct = async () => {
+      try {
+        const response = await fetch(getApiUrl(`/api/products/${id}`));
+        if (!response.ok) {
+          throw new Error('Failed to fetch product');
+        }
+        const data = await response.json();
+        setProduct(data);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load product');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (id) {
+      fetchProduct();
     }
-  }, [id, navigate]);
+  }, [id]);
 
   const handleAddToCart = () => {
     if (!product) return;
@@ -36,8 +49,16 @@ export default function ProductDetail() {
     alert('Added to cart!');
   };
 
+  if (loading) {
+    return <div className="text-center py-8">Loading...</div>;
+  }
+
+  if (error) {
+    return <div className="text-center py-8 text-red-600">{error}</div>;
+  }
+
   if (!product) {
-    return <div>Loading...</div>;
+    return <div className="text-center py-8">Product not found</div>;
   }
 
   const daysOfWeek = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
@@ -48,7 +69,7 @@ export default function ProductDetail() {
         {/* Product Image */}
         <div>
           <img
-            src={product.imageUrl}
+            src={product.image || '/placeholder.png'}
             alt={product.name}
             className="w-full h-96 object-cover rounded-lg shadow-lg"
           />
@@ -84,26 +105,26 @@ export default function ProductDetail() {
               <input
                 type="number"
                 min="1"
-                max={product.quantity}
+                max={product.stock}
                 value={quantity}
-                onChange={(e) => setQuantity(Math.min(product.quantity, Math.max(1, parseInt(e.target.value) || 1)))}
+                onChange={(e) => setQuantity(Math.min(product.stock, Math.max(1, parseInt(e.target.value) || 1)))}
                 className="w-20 text-center border-t border-b"
               />
               <button
-                onClick={() => setQuantity(Math.min(product.quantity, quantity + 1))}
+                onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
                 className="px-3 py-1 border rounded-r hover:bg-gray-100"
               >
                 +
               </button>
               <span className="ml-4 text-sm text-gray-500">
-                {product.quantity} available
+                {product.stock} available
               </span>
             </div>
           </div>
 
           <button
             onClick={handleAddToCart}
-            disabled={!product.available || product.quantity === 0}
+            disabled={!product.available || product.stock === 0}
             className="mt-8 w-full bg-green-600 text-white py-3 px-4 rounded-md hover:bg-green-700 disabled:bg-gray-400"
           >
             Add to Cart
@@ -112,29 +133,29 @@ export default function ProductDetail() {
       </div>
 
       {/* Farm Information */}
-      {product.farmInfo && (
+      {product.farm && (
         <div className="mt-12 bg-white rounded-lg shadow-lg p-6">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">Farm Information</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div>
-              <h3 className="text-lg font-semibold mb-4">{product.farmInfo.name}</h3>
+              <h3 className="text-lg font-semibold mb-4">{product.farm.name}</h3>
               <div className="space-y-4">
                 <p className="flex items-center text-gray-600">
                   <MapPinIcon className="h-5 w-5 mr-2 flex-shrink-0" />
-                  {product.farmInfo.address}
+                  {product.farm.location}
                 </p>
                 <p className="flex items-center text-gray-600">
                   <PhoneIcon className="h-5 w-5 mr-2 flex-shrink-0" />
-                  {product.farmInfo.phone}
+                  {product.farm.phone}
                 </p>
                 <p className="flex items-center text-gray-600">
                   <EnvelopeIcon className="h-5 w-5 mr-2 flex-shrink-0" />
-                  {product.farmInfo.email}
+                  {product.farm.email}
                 </p>
-                {product.farmInfo.pickupInstructions && (
+                {product.farm.description && (
                   <div className="mt-6 bg-green-50 p-4 rounded-lg">
-                    <h4 className="font-semibold text-green-800 mb-2">Pickup Instructions</h4>
-                    <p className="text-green-700">{product.farmInfo.pickupInstructions}</p>
+                    <h4 className="font-semibold text-green-800 mb-2">About the Farm</h4>
+                    <p className="text-green-700">{product.farm.description}</p>
                   </div>
                 )}
               </div>
@@ -148,7 +169,7 @@ export default function ProductDetail() {
                 {daysOfWeek.map(day => (
                   <div key={day} className="flex justify-between text-gray-600">
                     <span className="capitalize">{day}</span>
-                    <span>{product.farmInfo.hours[day]}</span>
+                    <span>{product.farm.hours[day]}</span>
                   </div>
                 ))}
               </div>

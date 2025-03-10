@@ -21,6 +21,7 @@ export default function Layout({ children }: LayoutProps) {
   const navLinks = [
     { name: 'Home', href: '/' },
     { name: 'Products', href: '/products' },
+    { name: 'Farms', href: '/farms' },
     ...(user?.role === 'farmer' ? [{ name: 'Farmer Dashboard', href: '/farmer/dashboard' }] : []),
     ...(user?.role === 'admin' ? [{ name: 'Admin Dashboard', href: '/admin/dashboard' }] : []),
   ];
@@ -66,7 +67,7 @@ export default function Layout({ children }: LayoutProps) {
                   <UserIcon className="h-6 w-6" />
                 </button>
                 {showUserMenu && (
-                  <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5">
+                  <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
                     <div className="py-1">
                       {user ? (
                         <>

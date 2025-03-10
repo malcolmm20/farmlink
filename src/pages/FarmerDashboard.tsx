@@ -2,9 +2,8 @@ import React from 'react';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Product, Order } from '../types';
-import { getFarmerProducts, getOrdersByFarmer, createProduct, updateProduct, deleteProduct } from '../lib/db';
+import { getApiUrl } from '../utils/api';
 import ProductCard from '../components/ProductCard';
-import { sampleFarms } from '../lib/db';
 
 export default function FarmerDashboard() {
   const navigate = useNavigate();
@@ -12,29 +11,51 @@ export default function FarmerDashboard() {
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const [newProduct, setNewProduct] = useState({
+  const [newProduct, setNewProduct] = useState<Partial<Product>>({
     name: '',
     description: '',
-    price: '',
+    price: 0,
     category: 'vegetables',
-    imageUrl: '',
+    image: '',
     available: true,
-    quantity: 0,
+    stock: 0,
+    farmId: '',
   });
 
   useEffect(() => {
-    if (!user || user.role !== 'farmer') {
-      navigate('/login');
-      return;
-    }
+    const fetchData = async () => {
+      if (!user || user.role !== 'farmer') {
+        navigate('/login');
+        return;
+      }
 
-    const farmerProducts = getFarmerProducts(user.id);
-    const farmerOrders = getOrdersByFarmer(user.id);
-    setProducts(farmerProducts);
-    setOrders(farmerOrders);
-  }, [user, navigate]);
+      try {
+        // Fetch farmer's products
+        const productsResponse = await fetch(getApiUrl(`/api/products?farmId=${user._id}`));
+        if (!productsResponse.ok) {
+          throw new Error('Failed to fetch products');
+        }
+        const farmerProducts = await productsResponse.json();
 
-  const handleSubmit = (e: React.FormEvent) => {
+        // Fetch farmer's orders
+        const ordersResponse = await fetch(getApiUrl(`/api/orders?farmId=${user._id}`));
+        if (!ordersResponse.ok) {
+          throw new Error('Failed to fetch orders');
+        }
+        const farmerOrders = await ordersResponse.json();
+
+        setProducts(farmerProducts);
+        setOrders(farmerOrders);
+      } catch (error) {
+        console.error('Error fetching farmer data:', error);
+        alert('Failed to load dashboard data. Please refresh the page.');
+      }
+    };
+
+    fetchData();
+  }, [user?._id, navigate]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!user) {
@@ -42,52 +63,75 @@ export default function FarmerDashboard() {
       return;
     }
 
-    // Get the farm info based on the user's ID
-    const farmInfo = user.id === 'farmer1' ? sampleFarms.farm1 : sampleFarms.farm2;
-    
-    if (editingProduct) {
-      // Update existing product
-      const updatedProduct = updateProduct(editingProduct.id, {
-        name: newProduct.name,
-        description: newProduct.description,
-        price: parseFloat(newProduct.price),
-        category: newProduct.category,
-        imageUrl: newProduct.imageUrl,
-        available: newProduct.available,
-        quantity: parseInt(newProduct.quantity.toString()),
-      });
+    try {
+      if (editingProduct) {
+        // Update existing product
+        const response = await fetch(getApiUrl(`/api/products/${editingProduct.id}`), {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: newProduct.name,
+            description: newProduct.description,
+            price: newProduct.price || 0,
+            category: newProduct.category,
+            image: newProduct.image || 'https://images.unsplash.com/photo-1556742393-75aa5a16b0c3',
+            stock: newProduct.stock || 0,
+            available: newProduct.available,
+          }),
+        });
 
-      if (updatedProduct) {
+        if (!response.ok) {
+          throw new Error('Failed to update product');
+        }
+
+        const updatedProduct = await response.json();
         setProducts(products.map(p => p.id === editingProduct.id ? updatedProduct : p));
+        setEditingProduct(null);
+      } else {
+        // Create new product
+        const response = await fetch(getApiUrl('/api/products'), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: newProduct.name,
+            description: newProduct.description,
+            price: newProduct.price || 0,
+            category: newProduct.category,
+            image: newProduct.image || 'https://images.unsplash.com/photo-1556742393-75aa5a16b0c3',
+            stock: newProduct.stock || 0,
+            available: newProduct.available,
+            farmId: user._id,
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Failed to create product');
+        }
+
+        const newProductData = await response.json();
+        setProducts([...products, newProductData]);
       }
-      setEditingProduct(null);
-    } else {
-      // Create new product
-      const product = createProduct({
-        farmerId: user.id,
-        farmerName: user.name,
-        farmInfo,
-        name: newProduct.name,
-        description: newProduct.description,
-        price: parseFloat(newProduct.price),
-        category: newProduct.category,
-        imageUrl: newProduct.imageUrl,
-        available: newProduct.available,
-        quantity: parseInt(newProduct.quantity.toString()),
+
+      // Reset form
+      setNewProduct({
+        name: '',
+        description: '',
+        price: 0,
+        category: 'vegetables',
+        image: '',
+        available: true,
+        stock: 0,
+        farmId: '',
       });
-
-      setProducts([...products, { ...product, createdAt: new Date() }]);
+    } catch (error) {
+      console.error('Error saving product:', error);
+      alert('Failed to save product. Please try again.');
     }
-
-    setNewProduct({
-      name: '',
-      description: '',
-      price: '',
-      category: 'vegetables',
-      imageUrl: '',
-      available: true,
-      quantity: 0,
-    });
   };
 
   const handleEdit = (product: Product) => {
@@ -95,19 +139,30 @@ export default function FarmerDashboard() {
     setNewProduct({
       name: product.name,
       description: product.description,
-      price: product.price.toString(),
+      price: product.price,
       category: product.category,
-      imageUrl: product.imageUrl,
+      image: product.image || '',
       available: product.available,
-      quantity: product.quantity,
+      stock: product.stock,
+      farmId: product.farmId || '',
     });
   };
 
-  const handleDelete = (productId: string) => {
+  const handleDelete = async (productId: string) => {
     if (window.confirm('Are you sure you want to delete this product?')) {
-      const success = deleteProduct(productId);
-      if (success) {
+      try {
+        const response = await fetch(getApiUrl(`/api/products/${productId}`), {
+          method: 'DELETE',
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to delete product');
+        }
+
         setProducts(products.filter(p => p.id !== productId));
+      } catch (error) {
+        console.error('Error deleting product:', error);
+        alert('Failed to delete product. Please try again.');
       }
     }
   };
@@ -147,18 +202,23 @@ export default function FarmerDashboard() {
               type="number"
               step="0.01"
               value={newProduct.price}
-              onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
+              onChange={(e) => setNewProduct({ ...newProduct, price: parseFloat(e.target.value) })}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
               required
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Quantity</label>
+            <label className="block text-sm font-medium text-gray-700">Stock</label>
             <input
               type="number"
-              min="0"
-              value={newProduct.quantity}
-              onChange={(e) => setNewProduct({ ...newProduct, quantity: parseInt(e.target.value) || 0 })}
+              value={newProduct.stock}
+              onChange={(e) => {
+                const value = e.target.value;
+                setNewProduct({ 
+                  ...newProduct, 
+                  stock: value === '' ? 0 : parseInt(value, 10) || 0 
+                });
+              }}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
               required
             />
@@ -176,13 +236,13 @@ export default function FarmerDashboard() {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Image URL</label>
+            <label className="block text-sm font-medium text-gray-700">Image URL (Optional)</label>
             <input
               type="url"
-              value={newProduct.imageUrl}
-              onChange={(e) => setNewProduct({ ...newProduct, imageUrl: e.target.value })}
+              value={newProduct.image}
+              onChange={(e) => setNewProduct({ ...newProduct, image: e.target.value })}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
-              required
+              placeholder="https://example.com/image.jpg"
             />
           </div>
           <div className="flex items-center">
@@ -209,11 +269,12 @@ export default function FarmerDashboard() {
                   setNewProduct({
                     name: '',
                     description: '',
-                    price: '',
+                    price: 0,
                     category: 'vegetables',
-                    imageUrl: '',
+                    image: '',
                     available: true,
-                    quantity: 0,
+                    stock: 0,
+                    farmId: '',
                   });
                 }}
                 className="flex-1 bg-gray-200 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"

@@ -3,7 +3,11 @@ export type UserRole = 'farmer' | 'consumer' | 'admin';
 export interface User {
   id: string;
   name: string;
+  email: string;
   role: UserRole;
+  location?: string;
+  description?: string;
+  phone?: string;
   createdAt: Date;
 }
 
@@ -24,23 +28,22 @@ export interface FarmInfo {
   email: string;
 }
 
-export interface Farmer extends User {
+export interface Farm extends User {
   role: 'farmer';
   farmInfo: FarmInfo;
 }
 
 export interface Product {
   id: string;
-  farmerId: string;
-  farmerName: string;
-  farmInfo: FarmInfo;
   name: string;
   description: string;
   price: number;
   category: string;
-  imageUrl: string;
+  image?: string;
+  farmId: string;
+  farm?: Farm;
+  stock: number;
   available: boolean;
-  quantity: number;
   createdAt: Date;
 }
 
@@ -52,19 +55,19 @@ export interface OrderItem {
 
 export interface Order {
   id: string;
-  consumerId: string;
-  farmerId: string;
-  products: OrderItem[];
+  userId: string;
+  items: OrderItem[];
   status: 'pending' | 'accepted' | 'rejected' | 'completed';
   totalAmount: number;
+  shippingAddress: string;
   createdAt: Date;
 }
 
 export interface Review {
   id: string;
-  consumerId: string;
-  farmerId: string;
-  productId: string;
+  productId?: string;
+  farmId?: string;
+  userId: string;
   rating: number;
   comment: string;
   createdAt: Date;

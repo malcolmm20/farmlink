@@ -2,7 +2,7 @@ import React from 'react';
 import { useState, useEffect } from 'react';
 import { Product } from '../types';
 import ProductCard from '../components/ProductCard';
-import { getProducts } from '../lib/db';
+import { getApiUrl } from '../utils/api';
 
 const categories = ['all', 'vegetables', 'meat', 'dairy'];
 
@@ -11,11 +11,27 @@ export default function Products() {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const allProducts = getProducts();
-    setProducts(allProducts);
-    setFilteredProducts(allProducts);
+    const fetchProducts = async () => {
+      try {
+        const response = await fetch(getApiUrl('/api/products'));
+        if (!response.ok) {
+          throw new Error('Failed to fetch products');
+        }
+        const data = await response.json();
+        setProducts(data);
+        setFilteredProducts(data);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load products');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
   }, []);
 
   useEffect(() => {
@@ -50,6 +66,14 @@ export default function Products() {
     localStorage.setItem('cart', JSON.stringify(cart));
     alert('Added to cart!');
   };
+
+  if (loading) {
+    return <div className="text-center py-8">Loading...</div>;
+  }
+
+  if (error) {
+    return <div className="text-center py-8 text-red-600">{error}</div>;
+  }
 
   return (
     <div>

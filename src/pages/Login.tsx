@@ -1,93 +1,117 @@
 import React from 'react';
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { UserRole } from '../types';
-import { createUser } from '../lib/db';
+import { useNavigate, Link } from 'react-router-dom';
+import { getApiUrl } from '../utils/api';
 
 export default function Login() {
   const navigate = useNavigate();
-  const [name, setName] = useState('');
-  const [role, setRole] = useState<UserRole>('consumer');
+  const [username, setUsername] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
     
-    // For demo purposes, we'll just create a new user and store it in localStorage
-    const user = createUser({ name, role });
-    localStorage.setItem('user', JSON.stringify(user));
-    
-    // Check for return URL
-    const returnUrl = localStorage.getItem('returnUrl');
-    if (returnUrl) {
-      localStorage.removeItem('returnUrl');
-      // If returning from cart, ensure user is a consumer
-      if (returnUrl === '/cart' && role !== 'consumer') {
-        alert('Please log in as a consumer to place orders.');
-        localStorage.setItem('user', '');
-        setRole('consumer');
+    try {
+      // Find existing user
+      const response = await fetch(getApiUrl('/api/users'), {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch users');
+      }
+
+      const users = await response.json();
+      const existingUser = users.find((u: any) => u.email === username);
+
+      if (!existingUser) {
+        setError('User not found. Please sign up first.');
         return;
       }
-      navigate(returnUrl);
-      return;
-    }
-    
-    // Default redirects based on role
-    if (role === 'farmer') {
-      navigate('/farmer/dashboard');
-    } else if (role === 'admin') {
-      navigate('/admin/dashboard');
-    } else {
-      navigate('/products');
+
+      // Store user data and proceed
+      localStorage.setItem('user', JSON.stringify(existingUser));
+      
+      // Check for return URL
+      const returnUrl = localStorage.getItem('returnUrl');
+      if (returnUrl) {
+        localStorage.removeItem('returnUrl');
+        // If returning from cart, ensure user is a consumer
+        if (returnUrl === '/cart' && existingUser.role !== 'consumer') {
+          alert('Please log in as a consumer to place orders.');
+          localStorage.setItem('user', '');
+          return;
+        }
+        navigate(returnUrl);
+        return;
+      }
+      
+      // Default redirects based on role
+      if (existingUser.role === 'farmer') {
+        navigate('/farmer/dashboard');
+      } else if (existingUser.role === 'admin') {
+        navigate('/admin/dashboard');
+      } else {
+        navigate('/products');
+      }
+    } catch (error) {
+      console.error('Error during login:', error);
+      setError(error instanceof Error ? error.message : 'Failed to login. Please try again.');
     }
   };
 
   return (
-    <div className="max-w-md mx-auto">
-      <div className="bg-white p-8 rounded-lg shadow-md">
-        <h1 className="text-3xl font-bold text-center mb-8">Welcome to Farmlink</h1>
-        
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-              Your Name
-            </label>
-            <input
-              type="text"
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
-              required
-            />
+    <div className="min-h-screen flex items-center justify-center bg-green-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8">
+        <div>
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+            Sign in to your account
+          </h2>
+        </div>
+        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+          <div className="rounded-md shadow-sm -space-y-px">
+            <div>
+              <label htmlFor="username" className="sr-only">
+                Username
+              </label>
+              <input
+                id="username"
+                name="username"
+                type="text"
+                required
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm"
+                placeholder="Username"
+              />
+            </div>
           </div>
 
+          {error && (
+            <div className="text-red-600 text-sm text-center">
+              {error}
+            </div>
+          )}
+
           <div>
-            <label htmlFor="role" className="block text-sm font-medium text-gray-700">
-              I am a
-            </label>
-            <select
-              id="role"
-              value={role}
-              onChange={(e) => setRole(e.target.value as UserRole)}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+            <button
+              type="submit"
+              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
             >
-              <option value="consumer">Consumer</option>
-              <option value="farmer">Farmer</option>
-              <option value="admin">Admin</option>
-            </select>
+              Sign in
+            </button>
           </div>
 
-          <button
-            type="submit"
-            className="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
-          >
-            Continue
-          </button>
+          <div className="text-sm text-center">
+            <Link to="/signup" className="font-medium text-green-600 hover:text-green-500">
+              Don't have an account? Sign up
+            </Link>
+          </div>
         </form>
-
-        <p className="mt-4 text-center text-sm text-gray-600">
-          Note: This is a demo version. No password required.
-        </p>
       </div>
     </div>
   );

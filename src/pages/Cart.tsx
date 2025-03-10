@@ -2,7 +2,6 @@ import React from 'react';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Product } from '../types';
-import { createOrder } from '../lib/db';
 
 interface CartItem extends Product {
   quantity: number;

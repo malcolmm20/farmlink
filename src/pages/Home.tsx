@@ -3,16 +3,40 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Product } from '../types';
 import ProductCard from '../components/ProductCard';
-import { getProducts } from '../lib/db';
+import { getApiUrl } from '../utils/api';
 
 export default function Home() {
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // For demo, we'll just get all products and take the first 3
-    const products = getProducts();
-    setFeaturedProducts(products.slice(0, 3));
+    const fetchFeaturedProducts = async () => {
+      try {
+        const response = await fetch(getApiUrl('/api/products'));
+        if (!response.ok) {
+          throw new Error('Failed to fetch products');
+        }
+        const data = await response.json();
+        // For demo, we'll just take the first 3 products
+        setFeaturedProducts(data.slice(0, 3));
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load products');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFeaturedProducts();
   }, []);
+
+  if (loading) {
+    return <div className="text-center py-8">Loading...</div>;
+  }
+
+  if (error) {
+    return <div className="text-center py-8 text-red-600">{error}</div>;
+  }
 
   return (
     <div>
