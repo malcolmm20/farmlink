@@ -13,7 +13,7 @@ export default function ProductCard({ product, onAddToCart, showActions = true }
   const navigate = useNavigate();
 
   const handleClick = () => {
-    navigate(`/product/${product.id}`);
+    navigate(`/product/${product._id}`);
   };
 
   const handleAddToCart = (e: React.MouseEvent) => {

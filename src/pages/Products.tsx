@@ -55,7 +55,7 @@ export default function Products() {
 
   const handleAddToCart = (product: Product) => {
     const cart = JSON.parse(localStorage.getItem('cart') || '[]');
-    const existingItem = cart.find((item: any) => item.id === product.id);
+    const existingItem = cart.find((item: any) => item._id === product._id);
 
     if (existingItem) {
       existingItem.quantity += 1;
@@ -112,7 +112,7 @@ export default function Products() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {filteredProducts.map(product => (
           <ProductCard
-            key={product.id}
+            key={product._id}
             product={product}
             onAddToCart={handleAddToCart}
           />

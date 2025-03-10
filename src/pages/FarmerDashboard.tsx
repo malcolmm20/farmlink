@@ -66,7 +66,7 @@ export default function FarmerDashboard() {
     try {
       if (editingProduct) {
         // Update existing product
-        const response = await fetch(getApiUrl(`/api/products/${editingProduct.id}`), {
+        const response = await fetch(getApiUrl(`/api/products/${editingProduct._id}`), {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -87,7 +87,7 @@ export default function FarmerDashboard() {
         }
 
         const updatedProduct = await response.json();
-        setProducts(products.map(p => p.id === editingProduct.id ? updatedProduct : p));
+        setProducts(products.map(p => p._id === editingProduct._id ? updatedProduct : p));
         setEditingProduct(null);
       } else {
         // Create new product
@@ -159,7 +159,7 @@ export default function FarmerDashboard() {
           throw new Error('Failed to delete product');
         }
 
-        setProducts(products.filter(p => p.id !== productId));
+        setProducts(products.filter(p => p._id !== productId));
       } catch (error) {
         console.error('Error deleting product:', error);
         alert('Failed to delete product. Please try again.');
@@ -291,7 +291,7 @@ export default function FarmerDashboard() {
         <h2 className="text-xl font-semibold mb-4">Your Products</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {products.map(product => (
-            <div key={product.id} className="relative">
+            <div key={product._id} className="relative">
               <ProductCard product={product} showActions={false} />
               <div className="absolute top-2 right-2 flex space-x-2">
                 <button
@@ -301,7 +301,7 @@ export default function FarmerDashboard() {
                   Edit
                 </button>
                 <button
-                  onClick={() => handleDelete(product.id)}
+                  onClick={() => handleDelete(product._id)}
                   className="bg-red-500 text-white p-2 rounded-md hover:bg-red-600"
                 >
                   Delete
