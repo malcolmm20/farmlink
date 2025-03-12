@@ -68,16 +68,16 @@ export default function AdminDashboard() {
   const handleDeleteProduct = async (productId: string) => {
     try {
       const response = await fetch(getApiUrl(`/api/products/${productId}`), {
-        method: 'DELETE'
+        method: 'DELETE',
       });
 
       if (!response.ok) {
         throw new Error('Failed to delete product');
       }
 
-      setProducts(products.filter(product => product.id !== productId));
-    } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to delete product');
+      setProducts(products.filter(product => product._id !== productId));
+    } catch (error) {
+      console.error('Error deleting product:', error);
     }
   };
 
@@ -151,10 +151,10 @@ export default function AdminDashboard() {
             <h2 className="text-lg font-medium text-gray-900 mb-4">Product Management</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {products.map(product => (
-                <div key={product.id} className="relative">
+                <div key={product._id} className="relative">
                   <ProductCard product={product} showActions={false} />
                   <button
-                    onClick={() => handleDeleteProduct(product.id)}
+                    onClick={() => handleDeleteProduct(product._id)}
                     className="absolute top-2 right-2 bg-red-600 text-white p-2 rounded-full hover:bg-red-700"
                   >
                     Delete

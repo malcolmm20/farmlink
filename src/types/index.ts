@@ -1,7 +1,7 @@
 export type UserRole = 'farmer' | 'consumer' | 'admin';
 
 export interface User {
-  id: string;
+  _id: string;
   name: string;
   email: string;
   role: UserRole;
@@ -54,7 +54,7 @@ export interface OrderItem {
 }
 
 export interface Order {
-  id: string;
+  _id: string;
   userId: string;
   items: OrderItem[];
   status: 'pending' | 'accepted' | 'rejected' | 'completed';
@@ -64,11 +64,16 @@ export interface Order {
 }
 
 export interface Review {
-  id: string;
+  _id: string;
   productId?: string;
   farmId?: string;
   userId: string;
   rating: number;
   comment: string;
   createdAt: Date;
+}
+
+export interface CartItem extends Product {
+  quantity: number;
+  farmId: string;
 } 

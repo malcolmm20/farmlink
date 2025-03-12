@@ -17,7 +17,7 @@ A platform connecting local farmers with consumers.
 2. Connect your GitHub repository
 3. Use these settings:
    - Environment: Node
-   - Build Command: `cd server && npm install && npm run build`
+   - Build Command: `cd server && npm install --include=dev && npm run build`
    - Start Command: `cd server && npm start`
    - Environment Variables:
      - `MONGODB_URI`: Your MongoDB connection string

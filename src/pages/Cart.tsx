@@ -1,159 +1,163 @@
 import React from 'react';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Product } from '../types';
-
-interface CartItem extends Product {
-  quantity: number;
-}
+import { Product, CartItem } from '../types';
+import { getApiUrl } from '../utils/api';
 
 export default function Cart() {
   const navigate = useNavigate();
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const user = JSON.parse(localStorage.getItem('user') || 'null');
 
   useEffect(() => {
-    const savedCart = localStorage.getItem('cart');
-    if (savedCart) {
-      setCartItems(JSON.parse(savedCart));
-    }
+    const items = JSON.parse(localStorage.getItem('cart') || '[]');
+    setCartItems(items);
   }, []);
 
-  const updateQuantity = (productId: string, newQuantity: number) => {
+  const updateQuantity = (itemId: string, newQuantity: number) => {
     if (newQuantity < 1) return;
     
-    const updatedCart = cartItems.map(item =>
-      item.id === productId ? { ...item, quantity: newQuantity } : item
+    const updatedCart = cartItems.map(item => 
+      item._id === itemId ? { ...item, quantity: newQuantity } : item
     );
     
     setCartItems(updatedCart);
     localStorage.setItem('cart', JSON.stringify(updatedCart));
   };
 
-  const removeItem = (productId: string) => {
-    const updatedCart = cartItems.filter(item => item.id !== productId);
+  const removeItem = (itemId: string) => {
+    const updatedCart = cartItems.filter(item => item._id !== itemId);
     setCartItems(updatedCart);
     localStorage.setItem('cart', JSON.stringify(updatedCart));
   };
 
-  const handlePlaceOrder = () => {
-    if (!user || user.role !== 'consumer') {
-      localStorage.setItem('returnUrl', '/cart');
-      navigate('/login');
-      return;
-    }
+  const handleCheckout = async () => {
+    setLoading(true);
+    setError(null);
 
-    // Group items by farmer
-    const ordersByFarmer = cartItems.reduce((acc, item) => {
-      if (!acc[item.farmerId]) {
-        acc[item.farmerId] = [];
+    // Group items by farm
+    const itemsByFarm = cartItems.reduce((acc: { [key: string]: CartItem[] }, item) => {
+      const farmId = item.farmId;
+      if (!acc[farmId]) {
+        acc[farmId] = [];
       }
-      acc[item.farmerId].push({
-        productId: item.id,
-        quantity: item.quantity,
-        price: item.price
-      });
+      acc[farmId].push(item);
       return acc;
-    }, {} as Record<string, { productId: string; quantity: number; price: number; }[]>);
+    }, {});
 
     try {
-      // Create an order for each farmer
-      Object.entries(ordersByFarmer).forEach(([farmerId, products]) => {
-        const totalAmount = products.reduce((sum, item) => sum + item.price * item.quantity, 0);
-        
-        createOrder({
-          consumerId: user.id,
-          farmerId,
-          products,
-          status: 'pending',
-          totalAmount
-        });
-      });
+      // Create an order for each farm
+      await Promise.all(Object.entries(itemsByFarm).map(async ([farmId, items]) => {
+        const orderData = {
+          items: items.map(item => ({
+            productId: item._id,
+            quantity: item.quantity,
+            price: item.price
+          })),
+          farmId,
+          totalAmount: items.reduce((sum, item) => sum + item.price * item.quantity, 0)
+        };
 
-      // Clear cart
-      localStorage.removeItem('cart');
+        const response = await fetch(getApiUrl('/api/orders'), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(orderData),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to create order');
+        }
+      }));
+
+      // Clear cart after successful checkout
+      localStorage.setItem('cart', '[]');
       setCartItems([]);
       alert('Orders placed successfully!');
-      navigate('/products'); // Redirect to products page after successful order
-    } catch (error) {
-      console.error('Error placing order:', error);
-      alert('There was an error placing your order. Please try again.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to place orders');
+    } finally {
+      setLoading(false);
     }
   };
 
   const total = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
-  return (
-    <div>
-      <h1 className="text-3xl font-bold text-gray-800 mb-8">Shopping Cart</h1>
+  if (cartItems.length === 0) {
+    return (
+      <div className="text-center py-8">
+        <h2 className="text-2xl font-bold mb-4">Your Cart is Empty</h2>
+        <p className="text-gray-600">Add some products to get started!</p>
+      </div>
+    );
+  }
 
-      {cartItems.length === 0 ? (
-        <div className="text-center py-12">
-          <p className="text-gray-500 mb-4">Your cart is empty</p>
-          <a
-            href="/products"
-            className="text-green-600 hover:text-green-700 font-medium"
-          >
-            Continue Shopping
-          </a>
-        </div>
-      ) : (
-        <div className="space-y-6">
-          {cartItems.map(item => (
-            <div
-              key={item.id}
-              className="flex items-center space-x-4 bg-white p-4 rounded-lg shadow"
-            >
+  return (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <h1 className="text-3xl font-bold text-gray-900 mb-8">Shopping Cart</h1>
+      
+      <div className="space-y-8">
+        {cartItems.map(item => (
+          <div key={item._id} className="flex items-center justify-between bg-white p-6 rounded-lg shadow">
+            <div className="flex items-center space-x-4">
               <img
-                src={item.imageUrl}
+                src={item.image}
                 alt={item.name}
                 className="w-24 h-24 object-cover rounded"
               />
-              <div className="flex-1">
+              <div>
                 <h3 className="text-lg font-semibold">{item.name}</h3>
-                <p className="text-gray-600">{item.description}</p>
-                <p className="text-green-600 font-semibold mt-1">
-                  ${item.price.toFixed(2)}
-                </p>
+                <p className="text-gray-600">${item.price.toFixed(2)}</p>
               </div>
+            </div>
+            
+            <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">
                 <button
-                  onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                  className="px-2 py-1 bg-gray-100 rounded hover:bg-gray-200"
+                  onClick={() => updateQuantity(item._id, item.quantity - 1)}
+                  className="px-3 py-1 bg-gray-200 rounded"
                 >
                   -
                 </button>
                 <span className="w-8 text-center">{item.quantity}</span>
                 <button
-                  onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                  className="px-2 py-1 bg-gray-100 rounded hover:bg-gray-200"
+                  onClick={() => updateQuantity(item._id, item.quantity + 1)}
+                  className="px-3 py-1 bg-gray-200 rounded"
                 >
                   +
                 </button>
-                <button
-                  onClick={() => removeItem(item.id)}
-                  className="ml-4 text-red-500 hover:text-red-700"
-                >
-                  Remove
-                </button>
               </div>
+              
+              <button
+                onClick={() => removeItem(item._id)}
+                className="text-red-600 hover:text-red-800"
+              >
+                Remove
+              </button>
             </div>
-          ))}
-
-          <div className="bg-white p-6 rounded-lg shadow mt-8">
-            <div className="flex justify-between items-center mb-4">
-              <span className="text-lg font-semibold">Total:</span>
-              <span className="text-2xl font-bold text-green-600">
-                ${total.toFixed(2)}
-              </span>
-            </div>
-            <button
-              onClick={handlePlaceOrder}
-              className="w-full bg-green-600 text-white py-3 px-4 rounded-md hover:bg-green-700 transition-colors"
-            >
-              Place Order
-            </button>
           </div>
+        ))}
+      </div>
+      
+      <div className="mt-8 flex justify-between items-center">
+        <div className="text-xl font-semibold">
+          Total: ${total.toFixed(2)}
+        </div>
+        <button
+          onClick={handleCheckout}
+          disabled={loading}
+          className="bg-green-600 text-white px-8 py-3 rounded-md hover:bg-green-700 disabled:opacity-50"
+        >
+          {loading ? 'Processing...' : 'Checkout'}
+        </button>
+      </div>
+      
+      {error && (
+        <div className="mt-4 text-red-600">
+          {error}
         </div>
       )}
     </div>

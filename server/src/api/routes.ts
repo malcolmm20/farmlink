@@ -1,5 +1,4 @@
-import express from 'express';
-import { Router } from 'express';
+import express, { Request, Response, Router } from 'express';
 import { User } from '../models/User';
 import { Product } from '../models/Product';
 import { Order } from '../models/Order';
@@ -8,7 +7,7 @@ import { Review } from '../models/Review';
 const router: Router = Router();
 
 // User Routes
-router.get('/users', async (req, res) => {
+router.get('/users', async (req: Request, res: Response) => {
   try {
     const users = await User.find();
     res.json(users);
