@@ -8,12 +8,17 @@ export default function SignUp() {
   const navigate = useNavigate();
   const [username, setUsername] = useState('');
   const [displayName, setDisplayName] = useState('');
-  const [role, setRole] = useState<UserRole>('consumer');
+  const [role, setRole] = useState<UserRole | ''>('');
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
+    if (!role) {
+      setError('Please select an account type');
+      return;
+    }
     
     try {
       // Check if username is already taken
@@ -110,9 +115,9 @@ export default function SignUp() {
                 placeholder="Display Name"
               />
             </div>
-            <div>
-              <label htmlFor="role" className="sr-only">
-                Role
+            <div className="mt-4">
+              <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">
+                Account Type
               </label>
               <select
                 id="role"
@@ -120,8 +125,9 @@ export default function SignUp() {
                 required
                 value={role}
                 onChange={(e) => setRole(e.target.value as UserRole)}
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm"
+                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
               >
+                <option value="" disabled>Choose account type</option>
                 <option value="consumer">Consumer</option>
                 <option value="farmer">Farmer</option>
                 <option value="admin">Admin</option>
