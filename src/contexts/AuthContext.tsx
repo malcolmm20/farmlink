@@ -1,115 +1,59 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-
-interface User {
-  _id: string;
-  name: string;
-  email: string;
-  role: 'user' | 'farmer' | 'admin';
-}
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { getApiUrl } from '../utils/api';
+import { User } from '../types';
 
 interface AuthContextType {
   user: User | null;
-  loading: boolean;
-  error: string | null;
-  login: (email: string, password: string) => Promise<void>;
-  logout: () => Promise<void>;
-  register: (userData: { name: string; email: string; password: string; role: 'user' | 'farmer' }) => Promise<void>;
+  login: (userData: User) => Promise<void>;
+  logout: () => void;
+  signup: (userData: User) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
+  // Load user from localStorage on mount
   useEffect(() => {
-    // Check for existing session
-    const checkAuth = async () => {
-      try {
-        const response = await fetch('/api/auth/me');
-        if (response.ok) {
-          const userData = await response.json();
-          setUser(userData);
-        }
-      } catch (err) {
-        console.error('Auth check failed:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    checkAuth();
+    const savedUser = localStorage.getItem('user');
+    if (savedUser) {
+      setUser(JSON.parse(savedUser));
+    }
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = async (userData: User) => {
     try {
-      setLoading(true);
-      setError(null);
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
-
+      const response = await fetch(getApiUrl(`/api/users/${userData._id}`));
       if (!response.ok) {
-        throw new Error('Login failed');
+        throw new Error('Failed to fetch user details');
       }
+      
+      const fullUser = await response.json();
+      setUser(fullUser);
+      localStorage.setItem('user', JSON.stringify(fullUser));
+    } catch (error) {
+      console.error('Login error:', error);
+    }
+  };
 
-      const userData = await response.json();
+  const logout = () => {
+    setUser(null);
+    localStorage.removeItem('user');
+  };
+
+  const signup = async (userData: User) => {
+    try {
+      // Assuming signup API also returns full user details
       setUser(userData);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Login failed');
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const logout = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      await fetch('/api/auth/logout', { method: 'POST' });
-      setUser(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Logout failed');
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const register = async (userData: { name: string; email: string; password: string; role: 'user' | 'farmer' }) => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(userData),
-      });
-
-      if (!response.ok) {
-        throw new Error('Registration failed');
-      }
-
-      const newUser = await response.json();
-      setUser(newUser);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Registration failed');
-      throw err;
-    } finally {
-      setLoading(false);
+      localStorage.setItem('user', JSON.stringify(userData));
+    } catch (error) {
+      console.error('Signup error:', error);
     }
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, error, login, logout, register }}>
+    <AuthContext.Provider value={{ user, login, logout, signup }}>
       {children}
     </AuthContext.Provider>
   );
@@ -117,8 +61,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-}; 
+};

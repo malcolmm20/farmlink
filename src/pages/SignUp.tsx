@@ -3,75 +3,54 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { UserRole } from '../types';
 import { getApiUrl } from '../utils/api';
+import { useAuth } from '../contexts/AuthContext';
+import { toast } from 'react-hot-toast';
+
+interface SignUpFormData {
+  name: string;
+  username: string;
+  role: UserRole | '';
+}
 
 export default function SignUp() {
   const navigate = useNavigate();
-  const [username, setUsername] = useState('');
-  const [displayName, setDisplayName] = useState('');
-  const [role, setRole] = useState<UserRole | ''>('');
-  const [error, setError] = useState<string | null>(null);
+  const { signup } = useAuth();
+  const [formData, setFormData] = useState<SignUpFormData>({
+    name: '',
+    username: '',
+    role: '',
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
-
-    if (!role) {
-      setError('Please select an account type');
+    if (!formData.role) {
+      toast.error('Please select an account type');
       return;
     }
     
     try {
-      // Check if username is already taken
       const response = await fetch(getApiUrl('/api/users'), {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch users');
-      }
-
-      const users = await response.json();
-      const existingUser = users.find((u: any) => u.email === username);
-
-      if (existingUser) {
-        setError('Username already taken. Please choose another one.');
-        return;
-      }
-
-      // Create new user
-      const createResponse = await fetch(getApiUrl('/api/users'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          name: displayName,
-          email: username,
-          role,
+          ...formData,
+          role: formData.role as UserRole,
         }),
       });
 
-      if (!createResponse.ok) {
-        throw new Error('Failed to create user');
+      if (!response.ok) {
+        throw new Error('Registration failed');
       }
 
-      const newUser = await createResponse.json();
-      localStorage.setItem('user', JSON.stringify(newUser));
+      const newUser = await response.json();
+      await signup(newUser);
       
-      // Redirect based on role
-      if (newUser.role === 'farmer') {
-        navigate('/farmer/dashboard');
-      } else if (newUser.role === 'admin') {
-        navigate('/admin/dashboard');
-      } else {
-        navigate('/products');
-      }
+      navigate(newUser.role === 'farmer' ? '/farmer/setup' : '/');
     } catch (error) {
-      console.error('Error during sign up:', error);
-      setError(error instanceof Error ? error.message : 'Failed to sign up. Please try again.');
+      console.error('Registration error:', error);
+      toast.error('Failed to register. Please try again.');
     }
   };
 
@@ -94,25 +73,25 @@ export default function SignUp() {
                 name="username"
                 type="text"
                 required
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                value={formData.username}
+                onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                 className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm"
                 placeholder="Username"
               />
             </div>
             <div>
-              <label htmlFor="displayName" className="sr-only">
-                Display Name
+              <label htmlFor="name" className="sr-only">
+                Name
               </label>
               <input
-                id="displayName"
-                name="displayName"
+                id="name"
+                name="name"
                 type="text"
                 required
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm"
-                placeholder="Display Name"
+                placeholder="Full name"
               />
             </div>
             <div className="py-4">
@@ -120,23 +99,18 @@ export default function SignUp() {
                 id="role"
                 name="role"
                 required
-                value={role}
-                onChange={(e) => setRole(e.target.value as UserRole)}
+                value={formData.role}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => 
+                  setFormData({ ...formData, role: e.target.value as UserRole | '' })}
                 className="appearance-none relative block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
               >
-                <option value="" disabled>Choose account type</option>
+                <option value="">Choose account type</option>
                 <option value="customer">Customer</option>
                 <option value="farmer">Farmer</option>
                 <option value="admin">Admin</option>
               </select>
             </div>
           </div>
-
-          {error && (
-            <div className="text-red-600 text-sm text-center">
-              {error}
-            </div>
-          )}
 
           <div>
             <button

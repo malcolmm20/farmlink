@@ -40,8 +40,13 @@ export default function Home() {
   return (
     <div>
       {/* Hero Section */}
-      <div className="relative bg-green-800 text-white py-20 rounded-lg overflow-hidden">
-        <div className="absolute inset-0 bg-black opacity-50"></div>
+      <div 
+        className="relative bg-green-800 text-white py-20 rounded-lg overflow-hidden bg-cover bg-center"
+        style={{ backgroundImage: `url('https://media.istockphoto.com/id/543212762/photo/tractor-cultivating-field-at-spring.jpg?s=612x612&w=0&k=20&c=uJDy7MECNZeHDKfUrLNeQuT7A1IqQe89lmLREhjIJYU=')` }}
+      >
+        {/* Dark green overlay */}
+        <div className="absolute inset-0 bg-green-900 opacity-60"></div>
+
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-4xl md:text-6xl font-bold mb-6">
             Fresh Food, Local Farmers

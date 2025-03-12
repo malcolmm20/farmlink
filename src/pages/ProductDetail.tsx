@@ -159,7 +159,7 @@ export default function ProductDetail() {
                 </p>
                 <p className="flex items-center text-gray-600">
                   <EnvelopeIcon className="h-5 w-5 mr-2 flex-shrink-0" />
-                  {product.farm.email}
+                  {product.farm.username}
                 </p>
                 {product.farm.description && (
                   <div className="mt-6 bg-green-50 p-4 rounded-lg">

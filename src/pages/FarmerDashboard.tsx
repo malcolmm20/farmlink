@@ -3,10 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { Product, Order } from '../types';
 import { getApiUrl } from '../utils/api';
 import ProductCard from '../components/ProductCard';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function FarmerDashboard() {
   const navigate = useNavigate();
-  const user = JSON.parse(localStorage.getItem('user') || 'null');
+  const { user } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -14,7 +15,7 @@ export default function FarmerDashboard() {
     name: '',
     description: '',
     price: 0,
-    category: 'produce',
+    category: '',
     image: '',
     available: true,
     stock: 0,
@@ -30,7 +31,7 @@ export default function FarmerDashboard() {
 
       try {
         // Fetch farmer's products
-        const productsResponse = await fetch(getApiUrl(`/api/products?farmId=${user._id}`));
+        const productsResponse = await fetch(getApiUrl(`/api/farms/${user._id}/products`));
         if (!productsResponse.ok) {
           throw new Error('Failed to fetch products');
         }
@@ -121,7 +122,7 @@ export default function FarmerDashboard() {
         name: '',
         description: '',
         price: 0,
-        category: 'produce',
+        category: '',
         image: '',
         available: true,
         stock: 0,
@@ -168,7 +169,19 @@ export default function FarmerDashboard() {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold text-gray-800 mb-8">Farmer Dashboard</h1>
+      <div className="flex justify-between items-center">
+        <div className="flex flex-row">
+          <h1 className="text-3xl font-bold text-gray-800 mb-8 mr-2">Farm Dashboard </h1>  
+          <h1 className="text-3xl font-bold text-gray-800 mb-8">{" - " + user?.name}</h1>
+        </ div>
+        <button
+          onClick={() => navigate('/farmer/setup')}
+          className="bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600"
+        >
+          Edit Profile
+        </button>
+      </div>
+
 
       {/* Add/Edit Product Form */}
       <div className="bg-white p-6 rounded-lg shadow mb-8">
@@ -209,7 +222,6 @@ export default function FarmerDashboard() {
           <div>
             <label className="block text-sm font-medium text-gray-700">Stock</label>
             <input
-              type="number"
               value={newProduct.stock}
               onChange={(e) => {
                 const value = e.target.value;
@@ -228,7 +240,9 @@ export default function FarmerDashboard() {
               value={newProduct.category}
               onChange={(e) => setNewProduct({ ...newProduct, category: e.target.value })}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+              required
             >
+              <option value="" disabled hidden>Choose product category</option>
               <option value="produce">Produce</option>
               <option value="meat">Meat</option>
               <option value="dairy">Dairy</option>

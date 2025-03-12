@@ -2,65 +2,42 @@ import React from 'react';
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { getApiUrl } from '../utils/api';
+import { useAuth } from '../contexts/AuthContext';
+import { toast } from 'react-hot-toast';
 
 export default function Login() {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [username, setUsername] = useState('');
-  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
-    
     try {
-      // Find existing user
-      const response = await fetch(getApiUrl('/api/users'), {
-        method: 'GET',
+      const response = await fetch(getApiUrl('/api/users/login'), {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        body: JSON.stringify({ username }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch users');
+        throw new Error('Invalid credentials');
       }
 
-      const users = await response.json();
-      const existingUser = users.find((u: any) => u.email === username);
+      const existingUser = await response.json();
+      await login(existingUser);
 
-      if (!existingUser) {
-        setError('User not found. Please sign up first.');
-        return;
-      }
-
-      // Store user data and proceed
-      localStorage.setItem('user', JSON.stringify(existingUser));
-      
-      // Check for return URL
       const returnUrl = localStorage.getItem('returnUrl');
       if (returnUrl) {
         localStorage.removeItem('returnUrl');
-        // If returning from cart, ensure user is a customer
-        if (returnUrl === '/cart' && existingUser.role !== 'customer') {
-          alert('Please log in as a customer to place orders.');
-          localStorage.setItem('user', '');
-          return;
-        }
         navigate(returnUrl);
-        return;
-      }
-      
-      // Default redirects based on role
-      if (existingUser.role === 'farmer') {
-        navigate('/farmer/dashboard');
-      } else if (existingUser.role === 'admin') {
-        navigate('/admin/dashboard');
       } else {
-        navigate('/products');
+        navigate(existingUser.role === 'farmer' ? '/farmer/dashboard' : '/');
       }
     } catch (error) {
-      console.error('Error during login:', error);
-      setError(error instanceof Error ? error.message : 'Failed to login. Please try again.');
+      console.error('Login error:', error);
+      toast.error('Invalid username');
     }
   };
 
@@ -73,7 +50,7 @@ export default function Login() {
           </h2>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="rounded-md shadow-sm -space-y-px">
+          <div className="rounded-md shadow-sm">
             <div>
               <label htmlFor="username" className="sr-only">
                 Username
@@ -85,17 +62,11 @@ export default function Login() {
                 required
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm"
+                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm"
                 placeholder="Username"
               />
             </div>
           </div>
-
-          {error && (
-            <div className="text-red-600 text-sm text-center">
-              {error}
-            </div>
-          )}
 
           <div>
             <button

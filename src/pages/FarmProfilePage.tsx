@@ -1,10 +1,10 @@
-import React from 'react';
 import { useParams } from 'react-router-dom';
 import { FarmProfile } from '../components/FarmProfile';
+import { useAuth } from '../contexts/AuthContext';
 
-export const FarmProfilePage: React.FC = () => {
+export default function FarmProfilePage() {
   const { farmId } = useParams<{ farmId: string }>();
-  const user = JSON.parse(localStorage.getItem('user') || 'null');
+  const { user } = useAuth();
   const currentUserId = user?._id || null;
 
   if (!farmId) {
@@ -12,4 +12,4 @@ export const FarmProfilePage: React.FC = () => {
   }
 
   return <FarmProfile farmId={farmId} currentUserId={currentUserId} />;
-}; 
+} 

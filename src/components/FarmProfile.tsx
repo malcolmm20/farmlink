@@ -3,37 +3,8 @@ import { StarIcon } from '@heroicons/react/20/solid';
 import ProductReview from './ProductReview';
 import { useNavigate } from 'react-router-dom';
 import { getApiUrl } from '../utils/api';
+import { Farm, Product, Review } from '../types';
 
-interface Farm {
-  _id: string;
-  name: string;
-  description: string;
-  location: string;
-  products: Product[];
-  reviews: Review[];
-  averageRating: number;
-  totalReviews: number;
-}
-
-interface Product {
-  _id: string;
-  name: string;
-  description: string;
-  price: number;
-  image: string;
-  category: string;
-}
-
-interface Review {
-  _id: string;
-  rating: number;
-  comment: string;
-  userId: {
-    _id: string;
-    name: string;
-  };
-  createdAt: string;
-}
 
 interface FarmProfileProps {
   farmId: string;
@@ -42,6 +13,8 @@ interface FarmProfileProps {
 
 export const FarmProfile: React.FC<FarmProfileProps> = ({ farmId, currentUserId }) => {
   const [farm, setFarm] = useState<Farm | null>(null);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -63,11 +36,9 @@ export const FarmProfile: React.FC<FarmProfileProps> = ({ farmId, currentUserId 
         const reviewsData = await reviewsResponse.json();
         const productsData = await productsResponse.json();
 
-        setFarm({
-          ...farmData,
-          ...reviewsData,
-          products: productsData
-        });
+        setFarm(farmData);
+        setReviews(reviewsData ?? []);
+        setProducts(productsData ?? []);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred');
       } finally {
@@ -96,27 +67,61 @@ export const FarmProfile: React.FC<FarmProfileProps> = ({ farmId, currentUserId 
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Farm Header */}
       <div className="bg-white shadow rounded-lg p-6 mb-8">
+        {/* Farm Name & Address */}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">{farm.name}</h1>
-            <p className="mt-2 text-gray-600">{farm.location}</p>
+            <p className="mt-2 text-gray-600">{farm.farmInfo?.address}</p>
           </div>
+          
+          {/* Rating */}
           <div className="text-center">
-            <div className="flex items-center justify-center">
+            <div className="flex items-center">
               <StarIcon className="h-5 w-5 text-yellow-400" />
-              <span className="ml-1 text-2xl font-semibold">{farm.averageRating.toFixed(1)}</span>
+              <span className="ml-1 text-2xl font-semibold">
+                {reviews.length > 0 
+                  ? (reviews.reduce((sum, review) => sum + (review.rating || 0), 0) / reviews.length).toFixed(1)
+                  : 'No Ratings'}
+              </span>
             </div>
-            <p className="text-sm text-gray-500">{farm.totalReviews} reviews</p>
+            <p className="text-sm text-gray-500">{reviews.length} reviews</p>
           </div>
         </div>
-        <p className="mt-4 text-gray-700">{farm.description}</p>
+
+        {/* Farm Description */}
+        <p className="mt-4 text-gray-700">{farm.farmInfo?.description}</p>
+
+        {/* Farm Details Grid */}
+        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-700">
+        {farm.farmInfo?.hours && (
+          <div className="flex items-center">
+            ⏰ <span className="ml-2"><strong>Hours:</strong> {farm.farmInfo.hours}</span>
+          </div>
+        )}
+        {farm.farmInfo?.pickupInstructions && (
+          <div className="flex items-center">
+            📦 <span className="ml-2"><strong>Pickup:</strong> {farm.farmInfo.pickupInstructions}</span>
+          </div>
+        )}
+        {farm.farmInfo?.phone && (
+          <div className="flex items-center">
+            📞 <span className="ml-2"><strong>Phone:</strong> {farm.farmInfo.phone}</span>
+          </div>
+        )}
+        {farm.farmInfo?.email && (
+          <div className="flex items-center">
+            ✉️ <span className="ml-2"><strong>Email:</strong> {farm.farmInfo.email}</span>
+          </div>
+        )}
       </div>
+    </div>
+
 
       {/* Products Section */}
       <div className="mb-8">
         <h2 className="text-2xl font-bold text-gray-900 mb-4">Products</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {(farm.products || []).map((product) => (
+          {(products || []).map((product) => (
             <div key={product._id} className="bg-white shadow rounded-lg overflow-hidden">
               <img
                 src={product.image}
@@ -156,11 +161,10 @@ export const FarmProfile: React.FC<FarmProfileProps> = ({ farmId, currentUserId 
       <div>
         <h2 className="text-2xl font-bold text-gray-900 mb-4">Reviews</h2>
         <div className="space-y-6">
-          {farm.reviews.map((review) => (
+          {reviews.map((review) => (
             <div key={review._id} className="bg-white shadow rounded-lg p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-semibold text-gray-900">{review.userId.name}</p>
                   <div className="flex items-center mt-1">
                     {[1, 2, 3, 4, 5].map((star) => (
                       <StarIcon

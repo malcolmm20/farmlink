@@ -1,15 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { getApiUrl } from '../utils/api';
-
-interface Farm {
-  _id: string;
-  name: string;
-  description?: string;
-  location?: string;
-  image?: string;
-  role: string;
-}
+import { Farm } from '../types';
 
 export default function Farms() {
   const [farms, setFarms] = useState<Farm[]>([]);
@@ -19,7 +11,7 @@ export default function Farms() {
   useEffect(() => {
     const fetchFarms = async () => {
       try {
-        const response = await fetch(getApiUrl('/api/users?role=farmer'));
+        const response = await fetch(getApiUrl('/api/farmers'));
         if (!response.ok) {
           throw new Error('Failed to fetch farms');
         }
@@ -56,21 +48,27 @@ export default function Farms() {
           >
             <div className="aspect-w-16 aspect-h-9 rounded-t-lg overflow-hidden">
               <img
-                src={farm.image || 'https://images.unsplash.com/photo-1500382017468-9049fed747ef'}
+                src={farm.farmInfo?.image || 'https://images.unsplash.com/photo-1500382017468-9049fed747ef'}
                 alt={farm.name}
                 className="w-full h-48 object-cover"
               />
             </div>
             <div className="p-6">
               <h2 className="text-xl font-semibold text-gray-800 mb-2">{farm.name}</h2>
-              {farm.location && (
+              {farm.farmInfo?.address && (
                 <p className="text-gray-600 mb-2">
                   <span className="inline-block mr-2">📍</span>
-                  {farm.location}
+                  {farm.farmInfo?.address}
                 </p>
               )}
-              {farm.description && (
-                <p className="text-gray-600 line-clamp-2">{farm.description}</p>
+              {farm.farmInfo?.description && (
+                <p className="text-gray-600 line-clamp-2">{farm.farmInfo?.description}</p>
+              )}
+              {farm.farmInfo?.hours && (
+                <p className="text-gray-600 mt-2">
+                  <span className="inline-block mr-2">🕒</span>
+                  {farm.farmInfo?.hours}
+                </p>
               )}
             </div>
           </Link>

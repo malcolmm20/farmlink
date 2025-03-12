@@ -3,28 +3,20 @@ export type UserRole = 'farmer' | 'customer' | 'admin';
 export interface User {
   _id: string;
   name: string;
-  email: string;
+  username: string;
   role: UserRole;
-  location?: string;
-  description?: string;
-  phone?: string;
+  farmInfo?: FarmInfo;
   createdAt: Date;
 }
 
 export interface FarmInfo {
   name: string;
   address: string;
-  pickupInstructions: string;
-  hours: {
-    monday: string;
-    tuesday: string;
-    wednesday: string;
-    thursday: string;
-    friday: string;
-    saturday: string;
-    sunday: string;
-  };
-  phone: string;
+  pickupInstructions?: string;
+  phone?: string;
+  description?: string;
+  hours?: string;
+  image?: string;
   email: string;
 }
 

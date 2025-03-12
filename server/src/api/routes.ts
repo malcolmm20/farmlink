@@ -52,11 +52,44 @@ router.put('/users/:id', async (req, res) => {
   }
 });
 
+router.put('/farms/farminfo/:id', async (req, res) => {
+  try {
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      { farmInfo: req.body },
+      { new: true, runValidators: true }
+    );
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    res.json(user);
+  } catch (error: any) {
+    res.status(400).json({ message: error?.message || 'Invalid user data' });
+  }
+});
+
 router.delete('/users/:id', async (req, res) => {
   try {
     const user = await User.findByIdAndDelete(req.params.id);
     if (!user) return res.status(404).json({ message: 'User not found' });
     res.json({ message: 'User deleted successfully' });
+  } catch (error: any) {
+    res.status(500).json({ message: error?.message || 'Internal server error' });
+  }
+});
+
+// Login route
+router.post('/users/login', async (req: Request, res: Response) => {
+  try {
+    const { username } = req.body;
+    
+    // Find user by username
+    let user = await User.findOne({ username });
+    
+    if (!user) {
+      return res.status(401).json({ message: 'Invalid username' });
+    }
+
+    // Return user data
+    res.json(user);
   } catch (error: any) {
     res.status(500).json({ message: error?.message || 'Internal server error' });
   }
@@ -246,14 +279,7 @@ router.get('/farms/:farmId/reviews', async (req, res) => {
       .populate('userId', 'name')
       .sort({ createdAt: -1 });
     
-    // Calculate average rating
-    const averageRating = reviews.reduce((acc: number, review: { rating: number }) => acc + review.rating, 0) / reviews.length;
-    
-    res.json({
-      reviews,
-      averageRating: reviews.length > 0 ? averageRating : 0,
-      totalReviews: reviews.length
-    });
+    res.json(reviews);
   } catch (error: any) {
     res.status(500).json({ message: error?.message || 'Internal server error' });
   }
@@ -281,14 +307,7 @@ router.get('/products/:productId/reviews', async (req, res) => {
       .populate('userId', 'name')
       .sort({ createdAt: -1 });
     
-    // Calculate average rating
-    const averageRating = reviews.reduce((acc: number, review: { rating: number }) => acc + review.rating, 0) / reviews.length;
-    
-    res.json({
-      reviews,
-      averageRating: reviews.length > 0 ? averageRating : 0,
-      totalReviews: reviews.length
-    });
+    res.json(reviews);
   } catch (error: any) {
     res.status(500).json({ message: error?.message || 'Internal server error' });
   }
@@ -301,6 +320,19 @@ router.get('/farms/:farmId/products', async (req, res) => {
     res.json(products);
   } catch (error: any) {
     res.status(500).json({ message: error?.message || 'Internal server error' });
+  }
+});
+
+// New route for fetching farmers
+router.get('/farmers', async (req, res) => {
+  try {
+    const farmers = await User.find({
+      role: 'farmer',
+      name: { $exists: true, $ne: '' },
+    });
+    res.json(farmers);
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to fetch farmers' });
   }
 });
 

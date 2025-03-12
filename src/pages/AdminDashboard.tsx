@@ -4,10 +4,11 @@ import { User, Product } from '../types';
 import ProductCard from '../components/ProductCard';
 import { getApiUrl } from '../utils/api';
 import { toast } from 'react-hot-toast';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
-  const user = JSON.parse(localStorage.getItem('user') || 'null');
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'users' | 'products'>('users');
   const [users, setUsers] = useState<User[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
