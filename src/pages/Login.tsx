@@ -40,9 +40,9 @@ export default function Login() {
       const returnUrl = localStorage.getItem('returnUrl');
       if (returnUrl) {
         localStorage.removeItem('returnUrl');
-        // If returning from cart, ensure user is a consumer
-        if (returnUrl === '/cart' && existingUser.role !== 'consumer') {
-          alert('Please log in as a consumer to place orders.');
+        // If returning from cart, ensure user is a customer
+        if (returnUrl === '/cart' && existingUser.role !== 'customer') {
+          alert('Please log in as a customer to place orders.');
           localStorage.setItem('user', '');
           return;
         }

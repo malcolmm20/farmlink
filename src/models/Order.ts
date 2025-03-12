@@ -8,7 +8,7 @@ const orderItemSchema = new mongoose.Schema({
 });
 
 const orderSchema = new mongoose.Schema({
-  consumerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  customerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   farmerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   products: [orderItemSchema],
   totalAmount: { type: Number, required: true },

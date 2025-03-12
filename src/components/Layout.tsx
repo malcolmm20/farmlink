@@ -109,7 +109,7 @@ export default function Layout({ children }: LayoutProps) {
           <div className="text-center">
             <p>© 2024 Farmlink. All rights reserved.</p>
             <p className="mt-2 text-sm text-green-200">
-              Connecting local farmers with urban consumers
+              Connecting local farmers with urban customers
             </p>
           </div>
         </div>

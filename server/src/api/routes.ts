@@ -27,7 +27,9 @@ router.get('/users/:id', async (req, res) => {
 });
 
 router.post('/users', async (req, res) => {
+  console.log(req.body);
   const user = new User(req.body);
+  console.log(user);
   try {
     const newUser = await user.save();
     res.status(201).json(newUser);
