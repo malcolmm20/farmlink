@@ -151,20 +151,20 @@ export default function ProductDetail() {
               <div className="space-y-4">
                 <p className="flex items-center text-gray-600">
                   <MapPinIcon className="h-5 w-5 mr-2 flex-shrink-0" />
-                  {product.farm.location}
+                  {product.farm.farmInfo?.address}
                 </p>
                 <p className="flex items-center text-gray-600">
                   <PhoneIcon className="h-5 w-5 mr-2 flex-shrink-0" />
-                  {product.farm.phone}
+                  {product.farm.farmInfo?.phone}
                 </p>
                 <p className="flex items-center text-gray-600">
                   <EnvelopeIcon className="h-5 w-5 mr-2 flex-shrink-0" />
                   {product.farm.username}
                 </p>
-                {product.farm.description && (
+                {product.farm.farmInfo?.description && (
                   <div className="mt-6 bg-green-50 p-4 rounded-lg">
                     <h4 className="font-semibold text-green-800 mb-2">About the Farm</h4>
-                    <p className="text-green-700">{product.farm.description}</p>
+                    <p className="text-green-700">{product.farm.farmInfo?.description}</p>
                   </div>
                 )}
               </div>
@@ -176,12 +176,7 @@ export default function ProductDetail() {
               </h3>
               <div className="space-y-2">
                 {product.farm?.farmInfo?.hours && (
-                  daysOfWeek.map(day => (
-                    <div key={day} className="flex justify-between text-gray-600">
-                      <span className="capitalize">{day}</span>
-                      <span>{product.farm?.farmInfo?.hours[day as DayOfWeek]}</span>
-                    </div>
-                  ))
+                  <p>{product.farm?.farmInfo?.hours}</p>
                 )}
               </div>
             </div>
