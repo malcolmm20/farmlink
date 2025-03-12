@@ -3,7 +3,7 @@ import { Product } from '../types';
 import ProductCard from '../components/ProductCard';
 import { getApiUrl } from '../utils/api';
 
-const categories = ['all', 'vegetables', 'meat', 'dairy'];
+const categories = ['all', 'produce', 'meat', 'dairy'];
 
 export default function Products() {
   const [products, setProducts] = useState<Product[]>([]);

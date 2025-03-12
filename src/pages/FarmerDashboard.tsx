@@ -14,7 +14,7 @@ export default function FarmerDashboard() {
     name: '',
     description: '',
     price: 0,
-    category: 'vegetables',
+    category: 'produce',
     image: '',
     available: true,
     stock: 0,
@@ -121,7 +121,7 @@ export default function FarmerDashboard() {
         name: '',
         description: '',
         price: 0,
-        category: 'vegetables',
+        category: 'produce',
         image: '',
         available: true,
         stock: 0,
@@ -229,7 +229,7 @@ export default function FarmerDashboard() {
               onChange={(e) => setNewProduct({ ...newProduct, category: e.target.value })}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
             >
-              <option value="vegetables">Vegetables</option>
+              <option value="produce">Produce</option>
               <option value="meat">Meat</option>
               <option value="dairy">Dairy</option>
             </select>
@@ -269,7 +269,7 @@ export default function FarmerDashboard() {
                     name: '',
                     description: '',
                     price: 0,
-                    category: 'vegetables',
+                    category: 'produce',
                     image: '',
                     available: true,
                     stock: 0,
