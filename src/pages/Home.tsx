@@ -42,7 +42,7 @@ export default function Home() {
       {/* Hero Section */}
       <div 
         className="relative bg-green-800 text-white py-20 rounded-lg overflow-hidden bg-cover bg-center"
-        style={{ backgroundImage: `url('https://media.istockphoto.com/id/543212762/photo/tractor-cultivating-field-at-spring.jpg?s=612x612&w=0&k=20&c=uJDy7MECNZeHDKfUrLNeQuT7A1IqQe89lmLREhjIJYU=')` }}
+        style={{ backgroundImage: `url('https://ofa.on.ca/wp-content/uploads/2023/02/AdobeStock_75067643-scaled.jpeg')` }}
       >
         {/* Dark green overlay */}
         <div className="absolute inset-0 bg-green-900 opacity-60"></div>
