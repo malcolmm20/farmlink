@@ -12,7 +12,7 @@ const PORT = process.env.PORT || 8080;
 // CORS configuration
 const corsOptions = {
   origin: process.env.NODE_ENV === 'production'
-    ? ['https://farmlink.onrender.com', 'http://localhost:5173']
+    ? ['https://farmlink-s1uw.onrender.com', 'http://localhost:5173']
     : 'http://localhost:5173',
   credentials: true,
 };
