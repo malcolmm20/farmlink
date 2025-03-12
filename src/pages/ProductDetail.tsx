@@ -1,16 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { Product } from '../types';
 import { StarIcon, MapPinIcon, PhoneIcon, EnvelopeIcon, ClockIcon } from '@heroicons/react/24/outline';
 import { getApiUrl } from '../utils/api';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function ProductDetail() {
   const { id } = useParams();
-  const navigate = useNavigate();
   const [product, setProduct] = useState<Product | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { user } = useAuth();
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -33,20 +34,27 @@ export default function ProductDetail() {
     }
   }, [id]);
 
-  const handleAddToCart = () => {
-    if (!product) return;
+  const handleAddToCart = async () => {
+    if (!user || !product) return;
 
-    const cart = JSON.parse(localStorage.getItem('cart') || '[]');
-    const existingItem = cart.find((item: any) => item.id === product.id);
-
-    if (existingItem) {
-      existingItem.quantity += quantity;
-    } else {
-      cart.push({ ...product, quantity });
+    try {
+      const response = await fetch(getApiUrl(`/api/cart/${user._id}/add`), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          productId: product._id,
+          quantity: 1
+        }),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to add to cart');
+      }
+      alert('Added to cart!');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to add to cart');
     }
-
-    localStorage.setItem('cart', JSON.stringify(cart));
-    alert('Added to cart!');
   };
 
   if (loading) {
@@ -61,7 +69,8 @@ export default function ProductDetail() {
     return <div className="text-center py-8">Product not found</div>;
   }
 
-  const daysOfWeek = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+  const daysOfWeek = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const;
+  type DayOfWeek = typeof daysOfWeek[number];
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -123,7 +132,7 @@ export default function ProductDetail() {
           </div>
 
           <button
-            onClick={handleAddToCart}
+            onClick={() => handleAddToCart()}
             disabled={!product.available || product.stock === 0}
             className="mt-8 w-full bg-green-600 text-white py-3 px-4 rounded-md hover:bg-green-700 disabled:bg-gray-400"
           >
@@ -166,12 +175,14 @@ export default function ProductDetail() {
                 Hours of Operation
               </h3>
               <div className="space-y-2">
-                {daysOfWeek.map(day => (
-                  <div key={day} className="flex justify-between text-gray-600">
-                    <span className="capitalize">{day}</span>
-                    <span>{product.farm.hours[day]}</span>
-                  </div>
-                ))}
+                {product.farm?.farmInfo?.hours && (
+                  daysOfWeek.map(day => (
+                    <div key={day} className="flex justify-between text-gray-600">
+                      <span className="capitalize">{day}</span>
+                      <span>{product.farm?.farmInfo?.hours[day as DayOfWeek]}</span>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           </div>

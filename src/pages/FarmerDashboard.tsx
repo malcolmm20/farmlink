@@ -1,4 +1,3 @@
-import React from 'react';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Product, Order } from '../types';
@@ -318,12 +317,12 @@ export default function FarmerDashboard() {
         <div className="space-y-4">
           {orders.map(order => (
             <div
-              key={order.id}
+              key={order._id}
               className="border rounded-lg p-4"
             >
               <div className="flex justify-between items-center">
                 <div>
-                  <p className="font-semibold">Order #{order.id}</p>
+                  <p className="font-semibold">Order #{order._id}</p>
                   <p className="text-gray-600">Total: ${order.totalAmount.toFixed(2)}</p>
                 </div>
                 <span className={`px-3 py-1 rounded-full text-sm ${

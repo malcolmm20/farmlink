@@ -1,15 +1,16 @@
-import React from 'react';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Product, CartItem } from '../types';
+import { CartItem } from '../types';
+import { useAuth } from '../contexts/AuthContext';
 import { getApiUrl } from '../utils/api';
+import { toast } from 'react-hot-toast';
 
 export default function Cart() {
-  const navigate = useNavigate();
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const user = JSON.parse(localStorage.getItem('user') || 'null');
 
   useEffect(() => {
     const items = JSON.parse(localStorage.getItem('cart') || '[]');

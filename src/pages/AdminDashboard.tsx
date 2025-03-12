@@ -1,9 +1,9 @@
-import React from 'react';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, Product } from '../types';
 import ProductCard from '../components/ProductCard';
 import { getApiUrl } from '../utils/api';
+import { toast } from 'react-hot-toast';
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -52,16 +52,17 @@ export default function AdminDashboard() {
   const handleDeleteUser = async (userId: string) => {
     try {
       const response = await fetch(getApiUrl(`/api/users/${userId}`), {
-        method: 'DELETE'
+        method: 'DELETE',
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to delete user');
+      if (response.ok) {
+        setUsers(users.filter(user => user._id !== userId));
+        toast.success('User deleted successfully');
+      } else {
+        toast.error('Failed to delete user');
       }
-
-      setUsers(users.filter(user => user.id !== userId));
-    } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to delete user');
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      toast.error('Failed to delete user');
     }
   };
 
@@ -125,9 +126,9 @@ export default function AdminDashboard() {
           <div className="px-4 py-5 sm:p-6">
             <h2 className="text-lg font-medium text-gray-900 mb-4">User Management</h2>
             <div className="space-y-4">
-              {users.map(user => (
+              {users.map((user) => (
                 <div
-                  key={user.id}
+                  key={user._id}
                   className="flex items-center justify-between p-4 border rounded-lg"
                 >
                   <div>
@@ -135,7 +136,7 @@ export default function AdminDashboard() {
                     <p className="text-sm text-gray-500 capitalize">{user.role}</p>
                   </div>
                   <button
-                    onClick={() => handleDeleteUser(user.id)}
+                    onClick={() => handleDeleteUser(user._id)}
                     className="text-red-600 hover:text-red-800"
                   >
                     Delete
