@@ -115,10 +115,7 @@ export default function SignUp() {
                 placeholder="Display Name"
               />
             </div>
-            <div className="mt-4">
-              <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">
-                Account Type
-              </label>
+            <div className="py-4">
               <select
                 id="role"
                 name="role"
