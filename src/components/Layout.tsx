@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ShoppingCartIcon, UserIcon } from '@heroicons/react/24/outline';
 import clsx from 'clsx';
 import { useAuth } from '../contexts/AuthContext';
+import farmlinkLogo from '../assets/whitefarmlink.png';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -34,7 +35,7 @@ export default function Layout({ children }: LayoutProps) {
           <div className="flex justify-between h-16">
             <div className="flex items-center">
               <Link to="/" className="flex items-center">
-                <span className="text-2xl font-bold">🌾 Farmlink</span>
+                <img src={farmlinkLogo} style={{height: "90px"}}/>
               </Link>
               <div className="hidden md:flex ml-10 space-x-8">
                 {navLinks.map((link) => (
