@@ -4,6 +4,7 @@ import { Product } from '../types';
 import { StarIcon, MapPinIcon, PhoneIcon, EnvelopeIcon, ClockIcon } from '@heroicons/react/24/outline';
 import { getApiUrl } from '../utils/api';
 import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom'; 
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -12,6 +13,7 @@ export default function ProductDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -34,23 +36,42 @@ export default function ProductDetail() {
     }
   }, [id]);
 
-  const handleAddToCart = async () => {
-    if (!user || !product) return;
+  const handleAddToCart = () => {
+    if (!product) return; // Still check for product existence; user check is optional now
 
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+  
     try {
-      const response = await fetch(getApiUrl(`/api/cart/${user._id}/add`), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+      // Retrieve existing cart from localStorage, or initialize an empty array
+      const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+      
+      // Find if the product already exists in the cart
+      const existingItem = cart.find((item: any) => item.productId === product._id);
+  
+      if (existingItem) {
+        // If it exists, increment the quantity
+        existingItem.quantity += 1;
+      } else {
+        // If it doesn't exist, add it with quantity 1
+        cart.push({
           productId: product._id,
-          quantity: 1
-        }),
-      });
-      if (!response.ok) {
-        throw new Error('Failed to add to cart');
+          quantity: quantity,
+          // Optionally include additional product details if needed
+          name: product.name,
+          price: product.price,
+          image: product.image,
+          description: product.description,
+          category: product.category,
+          farmId: product.farmId,
+        });
       }
+  
+      // Save the updated cart back to localStorage
+      localStorage.setItem('cart', JSON.stringify(cart));
+      
       alert('Added to cart!');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to add to cart');

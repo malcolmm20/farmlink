@@ -329,7 +329,7 @@ export default function FarmerDashboard() {
       <div className="bg-white p-6 rounded-lg shadow">
         <h2 className="text-xl font-semibold mb-4">Recent Orders</h2>
         <div className="space-y-4">
-          {orders.map(order => (
+          {orders.filter(order => order.items.filter(item => item.farmId == user?._id).length > 0).map(order => (
             <div
               key={order._id}
               className="border rounded-lg p-4"

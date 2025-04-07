@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { CartItem } from '../types';
 import { getApiUrl } from '../utils/api';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function Cart() {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { user } = useAuth();
 
   useEffect(() => {
     const items = JSON.parse(localStorage.getItem('cart') || '[]');
@@ -33,43 +35,57 @@ export default function Cart() {
     setLoading(true);
     setError(null);
 
-    // Group items by farm
+    if (!user) {
+      setError('Please log in to checkout');
+      setLoading(false);
+      return;
+    }
+
     const itemsByFarm = cartItems.reduce((acc: { [key: string]: CartItem[] }, item) => {
-      const farmId = item.farmId;
-      if (!acc[farmId]) {
-        acc[farmId] = [];
-      }
+      const farmId = item.farmId || 'unknown';
+      console.log(item)
+      if (!acc[farmId]) acc[farmId] = [];
       acc[farmId].push(item);
       return acc;
     }, {});
 
     try {
-      // Create an order for each farm
-      await Promise.all(Object.entries(itemsByFarm).map(async ([farmId, items]) => {
-        const orderData = {
-          items: items.map(item => ({
-            productId: item._id,
-            quantity: item.quantity,
-            price: item.price
-          })),
-          farmId,
-          totalAmount: items.reduce((sum, item) => sum + item.price * item.quantity, 0)
-        };
+      await Promise.all(
+        Object.entries(itemsByFarm).map(async ([farmId, items]) => {
+          console.log(items)
+          const orderData = {
+            userId: user._id, // Add userId from authenticated user
+            items: items.map(item => ({
+              productId: item.productId,
+              quantity: item.quantity,
+              price: item.price,
+              name: item.name,
+              description: item.description,
+              image: item.image,
+              category: item.category,
+              farmId: item.farmId,
+            })),
+            farmId,
+            totalAmount: items.reduce((sum, item) => sum + item.price * item.quantity, 0),
+          };
+          console.log(orderData) 
+          const response = await fetch(getApiUrl('/api/orders'), {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              // Add auth token if required by backend
+              // 'Authorization': `Bearer ${user.token}`,
+            },
+            body: JSON.stringify(orderData),
+          });
 
-        const response = await fetch(getApiUrl('/api/orders'), {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(orderData),
-        });
+          if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Failed to create order: ${response.status} - ${errorText}`);
+          }
+        })
+      );
 
-        if (!response.ok) {
-          throw new Error('Failed to create order');
-        }
-      }));
-
-      // Clear cart after successful checkout
       localStorage.setItem('cart', '[]');
       setCartItems([]);
       alert('Orders placed successfully!');

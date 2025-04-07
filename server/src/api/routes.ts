@@ -185,12 +185,32 @@ router.get('/orders/:id', async (req, res) => {
 });
 
 router.post('/orders', async (req, res) => {
-  const order = new Order(req.body);
+  const { userId, items, farmId, totalAmount } = req.body;
+
+  // Basic validation
+  if (!userId || !items || !Array.isArray(items) || !farmId || typeof totalAmount !== 'number') {
+    return res.status(400).json({ message: 'Missing required fields: userId, items, farmId, totalAmount' });
+  }
+
+  for (const item of items) {
+    if (!item.productId || !item.quantity || !item.price) {
+      return res.status(400).json({ message: 'Each item must have productId, quantity, and price' });
+    }
+  }
+
+  const order = new Order({
+    userId,
+    items,
+    farmId,
+    totalAmount,
+  });
+
   try {
     const newOrder = await order.save();
     res.status(201).json(newOrder);
   } catch (error: any) {
-    res.status(400).json({ message: error?.message || 'Invalid order data' });
+    console.log('Error: ' + error.message);
+    res.status(400).json({ message: error.message || 'Invalid order data' });
   }
 });
 

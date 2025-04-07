@@ -43,6 +43,11 @@ export interface OrderItem {
   productId: string;
   quantity: number;
   price: number;
+  name: string;
+  description: string;
+  image: string;
+  category: string;
+  farmId: string;
 }
 
 export interface Order {
@@ -66,6 +71,7 @@ export interface Review {
 }
 
 export interface CartItem extends Product {
+  productId?: string
   quantity: number;
   farmId: string;
 } 
